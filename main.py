@@ -301,15 +301,23 @@ import h5py
 #     test_new = all[indeces[int(len(all)*.85) : ]]
 #     return train_new, val_new, test_new
 
-def split_with_new_ratio(train,val,test):
+def split_with_new_ratio(train,val,test,):
 
     all = np.concatenate((train, val , test), axis=0)
+    # all_non_one_hot = np.concatenate((train_not_onehot, validation_not_onehot, test_not_onehot), axis=0)
 
-    #np.random.shuffle(all)
+    # if shuffle:
+    #  np.random.shuffle(all, all_non_one_hot)
 
     train_new = all[:int(len(all) * .70)]
     val_new = all[int(len(all)*.70) : int(len(all)*.85)]
     test_new = all[int(len(all)*.85) : ]
+
+    # train_not_onehot_new = all_non_one_hot[:int(len(all_non_one_hot) * .70)]
+    # val_not_onehot_new = all_non_one_hot[int(len(all_non_one_hot) * .70): int(len(all_non_one_hot) * .85)]
+    # test_not_onehot_new = all_non_one_hot[int(len(all_non_one_hot) * .85):]
+
+
     return train_new, val_new, test_new
 
 
@@ -424,7 +432,9 @@ if args.load_los:
     y_los_train, y_los_val, y_los_test = LOS_label(args.rawCoord_folder)
     if args.new_split: y_los_train, y_los_val, y_los_test = split_with_new_ratio(y_los_train, y_los_val, y_los_test)
 
-if args.new_split: y_train, y_validation, y_test = split_with_new_ratio(y_train, y_validation, y_test)
+if args.new_split:
+    y_train, y_validation, y_test= split_with_new_ratio(y_train, y_validation, y_test)
+    y_train_not_onehot, y_validation_not_onehot, y_test_not_onehot = split_with_new_ratio(y_train_not_onehot, y_validation_not_onehot, y_test_not_onehot)
 print('label shapes', y_train.shape, y_validation.shape, y_test.shape)
 
 ############## LOS AND NLOS ##################################################
@@ -489,8 +499,7 @@ if 'coord' in args.input:
     X_coord_validation = X_coord_validation.reshape((X_coord_validation.shape[0], X_coord_validation.shape[1], 1))
     X_coord_test = X_coord_test.reshape((X_coord_test.shape[0], X_coord_test.shape[1], 1))
 
-    if args.new_split: X_coord_train, X_coord_validation, X_coord_test = split_with_new_ratio(X_coord_train, X_coord_validation,
-                                                                           X_coord_test)
+    if args.new_split: X_coord_train, X_coord_validation, X_coord_test= split_with_new_ratio(X_coord_train, X_coord_validation, X_coord_test)
 
     #sklearn.preprocessing.normalize(X_coord_train, norm='l2', *, axis=1, copy=True, return_norm=False)
 
@@ -551,7 +560,7 @@ if 'img' in args.input:
         X_img_validation = X_img_validation.reshape((X_img_validation.shape[0], X_img_validation.shape[1],X_img_validation.shape[2], 1))/3 # NORMALIZE
         X_img_test = X_img_test.reshape((X_img_test.shape[0], X_img_test.shape[1], X_img_test.shape[2],1))/3 # NORMALIZE
 
-    if args.new_split: X_img_train, X_img_validation, X_img_test = split_with_new_ratio(X_img_train, X_img_validation, X_img_test)
+    if args.new_split: X_img_train, X_img_validation, X_img_test= split_with_new_ratio(X_img_train, X_img_validation, X_img_test)
     print('img shapes', X_img_train.shape, X_img_validation.shape, X_img_test.shape)
 
 if 'lidar' in args.input:
@@ -1244,9 +1253,15 @@ else:
     pickle.dump(y_test, ytest_pickle)
     ytest_pickle.close()
 
+    ytest_power_pickle = open("ytest_power.pkl", 'wb')
+    pickle.dump(y_test_not_onehot, ytest_power_pickle)
+    ytest_power_pickle.close()
+
     ytest_hat_pickle = open("ytest_hat.pkl", 'wb')
     pickle.dump(y_test_hat, ytest_hat_pickle)
     ytest_hat_pickle.close()
+
+    print("#######SANITY CHECK######: ", y_test.shape, y_test_not_onehot.shape, y_test_hat.shape)
 
     from sklearn.metrics import f1_score
 
